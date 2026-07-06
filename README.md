@@ -70,3 +70,4 @@ references/
 ## 说明
 
 这是一个仍在推进中的项目。当前版本优先强调架构清晰、边界明确和可扩展性。
+后续计划架构在Project_Framework.canvas，可在Obsidian中打开查看。
