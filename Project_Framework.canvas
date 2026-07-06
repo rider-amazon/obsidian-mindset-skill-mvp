@@ -1,0 +1,30 @@
+{
+	"nodes":[
+		{"id":"b33ae38fe646325f","type":"text","text":" 用户提需求 ","x":-400,"y":-60,"width":250,"height":60,"color":"6"},
+		{"id":"0da2eff552a3ac39","type":"text","text":"触发、调用skill","x":-68,"y":-60,"width":188,"height":60,"color":"5"},
+		{"id":"df1abb6edb5935c7","type":"text","text":"读取SKILL.md（记录基础介绍、强制核心原则、基本流程、reference通道指引）","x":251,"y":-140,"width":189,"height":141,"color":"4"},
+		{"id":"7f9e02170ae33285","type":"text","text":"开放模式或复杂问题：读取open mode reference.md，自由生成","x":-480,"y":240,"width":250,"height":89,"color":"1"},
+		{"id":"7de56d8f3ef2b36a","type":"text","text":"agent产物自检","x":-480,"y":369,"width":250,"height":60,"color":"2"},
+		{"id":"36df0b9dc7938861","type":"text","text":"agent回答质量自检","x":-480,"y":459,"width":250,"height":60,"color":"2"},
+		{"id":"f4a612273f4c2863","type":"text","text":"运行结束","x":221,"y":399,"width":250,"height":60,"color":"5"},
+		{"id":"aac7094ceca513f2","type":"text","text":"prompt reference.md：\n拆解用户需求，必须执行\n只用来给agent明确语义，仅提供mode reference文件披露入口","x":400,"y":123,"width":240,"height":157,"color":"3"},
+		{"id":"aa7b042231de54b4","type":"text","text":"标准模式：按需读取reference.md，提供对应py接口","x":-480,"y":67,"width":250,"height":113,"color":"1"},
+		{"id":"4d0258b50f36f664","type":"text","text":"按标准命令执行","x":-680,"y":147,"width":141,"height":93,"color":"6"},
+		{"id":"6d71ad43a5903d42","type":"text","text":"mode reference.md：\n列出所有标准命令职责和reference入口，区分两种模式\n\n- 标准模式：列出现有可通过python硬执行命令，节省token。\n\n- 开放模式：保留一个特殊reference对应开放模式，只对agent生成做语法指导以及基本原则约束（同SKILL.md）\n\n运行：遍历标准命令，无结果进入open mode，有结果进入对应reference接口","x":-87,"y":40,"width":414,"height":289,"color":"2"}
+	],
+	"edges":[
+		{"id":"3ba546fb66963f02","fromNode":"b33ae38fe646325f","fromSide":"right","toNode":"0da2eff552a3ac39","toSide":"left"},
+		{"id":"dbe69eef482fd9cc","fromNode":"0da2eff552a3ac39","fromSide":"right","toNode":"df1abb6edb5935c7","toSide":"left"},
+		{"id":"c5128e3a089f12e6","fromNode":"df1abb6edb5935c7","fromSide":"bottom","toNode":"aac7094ceca513f2","toSide":"top"},
+		{"id":"9bd677854331d6c1","fromNode":"7f9e02170ae33285","fromSide":"left","toNode":"7de56d8f3ef2b36a","toSide":"left"},
+		{"id":"fc96fd797c8c2cb6","fromNode":"7de56d8f3ef2b36a","fromSide":"right","toNode":"f4a612273f4c2863","toSide":"left","label":"成功"},
+		{"id":"fdee3460af54fa1c","fromNode":"aac7094ceca513f2","fromSide":"left","toNode":"6d71ad43a5903d42","toSide":"right"},
+		{"id":"c821192ca4bce680","fromNode":"6d71ad43a5903d42","fromSide":"left","toNode":"7f9e02170ae33285","toSide":"right"},
+		{"id":"da324e20038db191","fromNode":"6d71ad43a5903d42","fromSide":"left","toNode":"aa7b042231de54b4","toSide":"right"},
+		{"id":"314d1dd9517498ff","fromNode":"aa7b042231de54b4","fromSide":"left","toNode":"4d0258b50f36f664","toSide":"right"},
+		{"id":"3d190390bba8daef","fromNode":"7f9e02170ae33285","fromSide":"left","toNode":"36df0b9dc7938861","toSide":"left"},
+		{"id":"2ad299a0068a8bb6","fromNode":"4d0258b50f36f664","fromSide":"bottom","toNode":"7de56d8f3ef2b36a","toSide":"left","color":"6"},
+		{"id":"fc90895c5254e7c3","fromNode":"4d0258b50f36f664","fromSide":"bottom","toNode":"36df0b9dc7938861","toSide":"left","color":"6"},
+		{"id":"542bfb0ab99346d0","fromNode":"36df0b9dc7938861","fromSide":"right","toNode":"f4a612273f4c2863","toSide":"left","label":"成功"}
+	]
+}
