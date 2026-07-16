@@ -21,7 +21,7 @@ obsidian原生自带功能：
 |---|---|---|
 | `question_note` | `30_Questions/*.md` | 把一个学习问题沉淀为问题页 |
 | `compare_canvas` | `10_Maps/*.canvas` | 把两个概念沉淀为 Obsidian Canvas 对比图 |
-| `open_mode` | 可选新建 Markdown / Canvas | 处理标准链路以外的问题，只允许安全新建 |
+| `open_route` | 可选新建 Markdown / Canvas | 处理标准链路以外的问题，只允许安全新建 |
 
 `question_note` 和 `compare_canvas` 是当前仅有的标准链路。复杂请求会先拆成 `task_queue`，再逐条判断走标准 route 还是 open route。
 
@@ -77,7 +77,7 @@ obsidian原生自带功能：
   -> SKILL.md
   -> references/prompt-reference.md     生成 Prompt JSON
   -> references/route-reference.md      生成 Route JSON
-  -> 标准链路或 open_mode
+  -> 标准链路或 open_route
   -> references/runtime-check.md        有文件产物时检查
   -> references/quality-check.md        回答结束前检查
 ```
@@ -93,7 +93,7 @@ references/
   route-reference.md
   question-note-reference.md
   compare-canvas-reference.md
-  open-mode-reference.md
+  open-route-reference.md
   runtime-check.md
   quality-check.md
 scripts/
@@ -113,7 +113,7 @@ scripts/
 
 脚本写入采用临时文件后替换，避免直接写入时异常导致已有文件被截断。
 
-`open_mode` 可以在用户明确要求时新建 Markdown 或 Canvas，但不能删除、移动、修改或覆盖已有文件。Canvas 和 Markdown 中的概念引用优先使用 Obsidian `[[概念]]` 语法。
+`open_route` 可以在用户明确要求时新建 Markdown 或 Canvas，但不能删除、移动、修改或覆盖已有文件。Canvas 和 Markdown 中的概念引用优先使用 Obsidian `[[概念]]` 语法。
 
 ## 脚本示例
 

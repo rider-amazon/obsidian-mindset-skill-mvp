@@ -13,11 +13,11 @@
 | 检查项 | 要求 |
 |---|---|
 | 脚本 result | `ok` 必须为 `true`，`path` 必须存在 |
-| 路径 | 标准问题页在 `30_Questions/*.md`；标准对比图在 `10_Maps/*.canvas`；open mode 新建文件必须位于用户确认的 Vault 内 |
+| 路径 | 标准问题页在 `30_Questions/*.md`；标准对比图在 `10_Maps/*.canvas`；open route 新建文件必须位于用户确认的 Vault 内 |
 | 文件存在 | 必须确认目标文件真实存在 |
 | 内容 | 文件不能空白，不能明显乱码 |
 | 格式 | `.canvas` 必须是合法 JSON |
-| Obsidian 链接 | open mode 新建 Markdown 或 Canvas 时，概念引用优先使用 `[[概念]]` |
+| Obsidian 链接 | open route 新建 Markdown 或 Canvas 时，概念引用优先使用 `[[概念]]` |
 | Canvas 布局 | 脚本 result 的 `layout_valid` 必须为 `true`；节点不得越出 group，节点矩形不得互相遮挡 |
 | 任务对应 | 产物必须对应当前 task，不能拿旧文件冒充 |
 
