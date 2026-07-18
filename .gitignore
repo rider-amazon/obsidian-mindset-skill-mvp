@@ -1,0 +1,5 @@
+#agent相关文件
+AGENT.*
+
+#obsidian
+.obsidian/*
