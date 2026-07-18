@@ -22,7 +22,7 @@ description: Build Obsidian learning artifacts from user questions. Use when the
 | 2 | `references/route-reference.md` |
 | 3a | `references/question-note-reference.md` |
 | 3b | `references/compare-canvas-reference.md` |
-| 3c | `references/open-mode-reference.md` |
+| 3c | `references/open-route-reference.md` |
 | 4 | `references/runtime-check.md` |
 | 5 | `references/quality-check.md` |
 

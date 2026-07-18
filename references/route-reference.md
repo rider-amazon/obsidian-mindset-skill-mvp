@@ -16,23 +16,23 @@
 | `request.task_shape` | 判断是否需要按队列推进 |
 | `task_queue[].id` | 保持任务顺序 |
 | `task_queue[].invoke.source` | 区分显式与隐式调用 |
-| `task_queue[].intent.requested_mode` | 校验显式模式优先级 |
+| `task_queue[].intent.request_route` | 校验显式入口优先级 |
 | `task_queue[].intent.task_candidate` | 判断进入哪个 route |
 | `task_queue[].intent.confidence` | 低置信度时转 open route |
-| `task_queue[].intent.has_mode_conflict` | 冲突拦截 |
+| `task_queue[].intent.has_route_conflict` | 冲突拦截 |
 
 其他字段保留给执行 reference、open route、回答组织和自检使用。
 
 ## 冲突拦截
 
-先逐条检查 `task_queue[].intent.has_mode_conflict`。
+先逐条检查 `task_queue[].intent.has_route_conflict`。
 
 | 条件 | 行为 |
 |---|---|
 | 任一 task 为 `true` | 暂停整个队列，不进入任何执行 reference |
 | 全部 task 为 `false` | 继续 route 匹配 |
 
-暂停时只提醒用户：显式指定的模式和任务内容不匹配，需要用户确认。不要自行改写用户模式继续执行。
+暂停时只提醒用户：显式指定的入口和任务内容不匹配，需要用户确认。不要自行改写用户入口继续执行。
 
 ## Route 匹配规则
 
@@ -40,13 +40,13 @@
 
 | 条件 | `route.type` | `route.reference` |
 |---|---|---|
-| `invoke.source = "explicit"` 且 `requested_mode` 为标准模式，`confidence = "low"` | 暂停 | 请求用户补充必要信息 |
+| `invoke.source = "explicit"` 且 `request_route` 为标准入口，`confidence = "low"` | 暂停 | 请求用户补充必要信息 |
 | `task_candidate = "question_note"` | `"standard"` | `references/question-note-reference.md` |
 | `task_candidate = "compare_canvas"` | `"standard"` | `references/compare-canvas-reference.md` |
-| `task_candidate = "open_mode"` | `"open"` | `references/open-mode-reference.md` |
-| 其他 `confidence = "low"` | `"open"` | `references/open-mode-reference.md` |
+| `task_candidate = "open_route"` | `"open"` | `references/open-route-reference.md` |
+| 其他 `confidence = "low"` | `"open"` | `references/open-route-reference.md` |
 
-显式标准模式优先于低置信度回退：信息不足时暂停确认，不得绕开用户指定模式。隐式任务低置信度时才回退 open route。
+显式标准入口优先于低置信度回退：信息不足时暂停确认，不得绕开用户指定入口。隐式任务低置信度时才回退 open route。
 
 ## 输出 schema
 
@@ -70,14 +70,14 @@
         "summary": ""
       },
       "intent": {
-        "requested_mode": "question_note | compare_canvas | open_mode | null",
-        "task_candidate": "question_note | compare_canvas | open_mode",
+        "request_route": "question_note | compare_canvas | open_route | null",
+        "task_candidate": "question_note | compare_canvas | open_route",
         "confidence": "high | medium | low",
-        "has_mode_conflict": false
+        "has_route_conflict": false
       },
       "route": {
         "type": "standard | open",
-        "reference": "references/question-note-reference.md | references/compare-canvas-reference.md | references/open-mode-reference.md"
+        "reference": "references/question-note-reference.md | references/compare-canvas-reference.md | references/open-route-reference.md"
       }
     }
   ]
