@@ -22,7 +22,6 @@ agent 必须先把当前 task 转成 `question_note spec`，再调用脚本。sp
 | `answer` | 可选，可写入完整 Markdown 正文 |
 | `related` | 可选，相关概念数组，使用概念名即可 |
 | `status` | 可选，`unresolved` / `partial` / `answered` / `converted_to_concept` |
-| `next_steps` | 可选，下一步动作数组 |
 | `force` | 可选，默认 `false`；不得用 spec 单独请求覆盖 |
 | `overwrite_authorized` | 仅用户明确要求覆盖时可写 `true` |
 | `overwrite_reason` | 仅覆盖时填写，记录用户授权原话或简要理由 |
@@ -66,7 +65,7 @@ python scripts/create_question_note.py --vault <vault_root> --spec <temp_spec_js
 
 ## 产物规则
 
-产物写入 `30_Questions/*.md`，用于记录真实学习问题、当前理解、相关概念和下一步动作。
+产物写入 `30_Questions/*.md`，用于记录真实学习问题、当前理解、回答、相关概念和状态。问题页不生成“下一步”章节，避免由单个问题无限扩张学习范围。
 
 ## 不负责
 
