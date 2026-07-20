@@ -1,3 +1,4 @@
+
 #agent相关文件
 AGENT.*
 
@@ -6,3 +7,10 @@ AGENT.*
 
 #canvas结构图
 *.canvas
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
