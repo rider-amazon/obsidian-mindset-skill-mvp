@@ -40,6 +40,8 @@ class JsonArgumentParser(argparse.ArgumentParser):
 
 
 def validate_spec(spec: dict[str, Any]) -> None:
+    if "force" in spec:
+        raise ValueError("Field 'force' is CLI-only; use --force.")
     for field in STRING_FIELDS:
         if field in spec and spec[field] is not None and not isinstance(spec[field], str):
             raise TypeError(f"Field '{field}' must be a string or null.")
@@ -49,8 +51,6 @@ def validate_spec(spec: dict[str, Any]) -> None:
         value = spec[field]
         if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
             raise TypeError(f"Field '{field}' must be an array of strings.")
-    if "force" in spec and not isinstance(spec["force"], bool):
-        raise TypeError("Field 'force' must be a JSON boolean.")
     if "overwrite_authorized" in spec and not isinstance(spec["overwrite_authorized"], bool):
         raise TypeError("Field 'overwrite_authorized' must be a JSON boolean.")
 
@@ -118,19 +118,66 @@ def estimate_text_height(
     *,
     min_height: int,
     width: int,
-    line_height: int = 34,
+    line_height: int = 32,
     padding: int = 44,
 ) -> int:
+    """Estimate rendered height with separate CJK and Latin width models."""
     usable_width = max(width - 40, 80)
-    units_per_line = max(8, usable_width // 15)
-    line_count = 0
-    for line in text.splitlines() or [""]:
-        display_units = sum(
-            2 if unicodedata.east_asian_width(char) in {"W", "F"} else 1
-            for char in line
-        )
-        line_count += max(1, math.ceil(display_units / units_per_line))
+    line_count = sum(
+        estimate_wrapped_lines(line, usable_width)
+        for line in (text.splitlines() or [""])
+    )
     return max(min_height, line_count * line_height + padding)
+
+
+def estimated_character_width(char: str) -> float:
+    """Return an approximate Obsidian Canvas character width in pixels."""
+    if char.isspace():
+        return 5.0
+    if unicodedata.east_asian_width(char) in {"W", "F"}:
+        return 17.0
+    if char.isascii():
+        if unicodedata.category(char).startswith("P"):
+            return 7.0
+        return 8.5
+    if unicodedata.east_asian_width(char) == "A":
+        return 12.0
+    return 10.0
+
+
+def estimate_wrapped_lines(line: str, usable_width: int) -> int:
+    """Estimate wrapping while keeping Latin words intact when possible."""
+    if not line:
+        return 1
+
+    tokens = re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]|[A-Za-z0-9_./:+-]+|\s+|.", line)
+    lines = 1
+    occupied = 0.0
+
+    for token in tokens:
+        if token.isspace():
+            token_width = estimated_character_width(" ")
+            if occupied and occupied + token_width <= usable_width:
+                occupied += token_width
+            continue
+
+        token_width = sum(estimated_character_width(char) for char in token)
+        if occupied and occupied + token_width > usable_width:
+            lines += 1
+            occupied = 0.0
+
+        if token_width <= usable_width:
+            occupied += token_width
+            continue
+
+        for char in token:
+            char_width = estimated_character_width(char)
+            if occupied and occupied + char_width > usable_width:
+                lines += 1
+                occupied = 0.0
+            occupied += char_width
+
+    return lines
 
 
 def build_text_node(
@@ -296,6 +343,118 @@ def validate_payload(payload: dict[str, Any]) -> None:
             )
 
 
+def choose_canvas_layout(
+    *,
+    title_height: int,
+    summary_height: int,
+    concept_height: int,
+    same_height: int,
+    left_detail_text: str,
+    right_detail_text: str,
+    related: list[dict[str, str]],
+) -> dict[str, Any]:
+    """Choose a compact layout from content-dependent width and grid candidates."""
+    group_x = 40
+    group_y = 40
+    top_row_y = 90
+    concept_y = top_row_y + max(title_height, summary_height) + 70
+    detail_y = concept_y + max(concept_height, same_height) + 110
+    target_aspect_ratio = 1.35
+    candidates: list[dict[str, Any]] = []
+
+    for detail_width in (360, 440, 520, 600):
+        left_detail_height = estimate_text_height(
+            left_detail_text, min_height=210, width=detail_width
+        )
+        right_detail_height = estimate_text_height(
+            right_detail_text, min_height=210, width=detail_width
+        )
+        main_bottom = detail_y + max(left_detail_height, right_detail_height)
+        base_group_width = max(1380, detail_width * 2 + 260)
+
+        grid_options: list[dict[str, Any]] = []
+        if not related:
+            grid_options.append(
+                {
+                    "related_width": 0,
+                    "columns": 0,
+                    "row_heights": [],
+                    "group_width": base_group_width,
+                    "content_bottom": main_bottom,
+                    "related_y": 0,
+                    "rows": 0,
+                }
+            )
+        else:
+            related_y = main_bottom + 140
+            for related_width in (280, 340, 400):
+                for columns in range(1, min(4, len(related)) + 1):
+                    column_gap = 80
+                    row_gap = 70
+                    grid_width = (
+                        columns * related_width + (columns - 1) * column_gap
+                    )
+                    group_width = max(base_group_width, grid_width + 100)
+                    row_heights: list[int] = []
+                    for row_start in range(0, len(related), columns):
+                        row_items = related[row_start : row_start + columns]
+                        row_heights.append(
+                            max(
+                                estimate_text_height(
+                                    related_context_text(item),
+                                    min_height=95,
+                                    width=related_width,
+                                )
+                                for item in row_items
+                            )
+                        )
+                    rows = len(row_heights)
+                    content_bottom = (
+                        related_y
+                        + sum(row_heights)
+                        + max(rows - 1, 0) * row_gap
+                    )
+                    grid_options.append(
+                        {
+                            "related_width": related_width,
+                            "columns": columns,
+                            "row_heights": row_heights,
+                            "group_width": group_width,
+                            "content_bottom": content_bottom,
+                            "related_y": related_y,
+                            "rows": rows,
+                        }
+                    )
+
+        for grid in grid_options:
+            group_width = grid["group_width"]
+            group_height = grid["content_bottom"] - group_y + 80
+            aspect_ratio = group_width / group_height
+            area = group_width * group_height
+            score = (
+                abs(math.log(aspect_ratio / target_aspect_ratio))
+                + area / 50_000_000
+                + grid["rows"] * 0.015
+            )
+            candidates.append(
+                {
+                    **grid,
+                    "score": score,
+                    "group_x": group_x,
+                    "group_y": group_y,
+                    "group_height": group_height,
+                    "top_row_y": top_row_y,
+                    "concept_y": concept_y,
+                    "detail_y": detail_y,
+                    "detail_width": detail_width,
+                    "left_detail_height": left_detail_height,
+                    "right_detail_height": right_detail_height,
+                }
+            )
+
+    return min(candidates, key=lambda candidate: candidate["score"])
+
+
 def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
     title = str(payload["title"]).strip()
     left = str(payload["left"]).strip()
@@ -324,31 +483,39 @@ def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
         estimate_text_height(right_text, min_height=100, width=280),
     )
     same_height = estimate_text_height(same_text, min_height=150, width=450)
-    detail_height = max(
-        estimate_text_height(left_detail_text, min_height=210, width=360),
-        estimate_text_height(right_detail_text, min_height=210, width=360),
+    layout = choose_canvas_layout(
+        title_height=title_height,
+        summary_height=summary_height,
+        concept_height=concept_height,
+        same_height=same_height,
+        left_detail_text=left_detail_text,
+        right_detail_text=right_detail_text,
+        related=related,
     )
 
-    top_row_y = 90
-    concept_y = top_row_y + max(title_height, summary_height) + 70
-    detail_y = concept_y + max(concept_height, same_height) + 110
-    related_y = detail_y + detail_height + 170
+    group_x = layout["group_x"]
+    group_y = layout["group_y"]
+    group_width = layout["group_width"]
+    group_center_x = group_x + group_width // 2
+    concept_y = layout["concept_y"]
+    detail_y = layout["detail_y"]
+    detail_width = layout["detail_width"]
 
     nodes: list[dict[str, Any]] = [
         {
             "id": "g1",
             "type": "group",
-            "x": 40,
-            "y": 40,
-            "width": 1380,
-            "height": 0,
+            "x": group_x,
+            "y": group_y,
+            "width": group_width,
+            "height": layout["group_height"],
             "label": title,
             "color": "5",
         },
         build_text_node(
             "title",
-            520,
-            top_row_y,
+            group_center_x - 210,
+            layout["top_row_y"],
             420,
             title_height,
             title_text,
@@ -356,7 +523,7 @@ def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
         ),
         build_text_node(
             "left",
-            120,
+            group_x + 80,
             concept_y,
             280,
             concept_height,
@@ -365,7 +532,7 @@ def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
         ),
         build_text_node(
             "right",
-            1050,
+            group_x + group_width - 360,
             concept_y,
             280,
             concept_height,
@@ -374,7 +541,7 @@ def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
         ),
         build_text_node(
             "same",
-            500,
+            group_center_x - 225,
             concept_y - 10,
             450,
             same_height,
@@ -383,26 +550,26 @@ def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
         ),
         build_text_node(
             "left_details",
-            90,
+            group_x + 50,
             detail_y,
-            360,
-            detail_height,
+            detail_width,
+            layout["left_detail_height"],
             left_detail_text,
             "6",
         ),
         build_text_node(
             "right_details",
-            980,
+            group_x + group_width - 50 - detail_width,
             detail_y,
-            360,
-            detail_height,
+            detail_width,
+            layout["right_detail_height"],
             right_detail_text,
             "6",
         ),
         build_text_node(
             "summary",
-            1070,
-            top_row_y,
+            group_x + group_width - 350,
+            layout["top_row_y"],
             250,
             summary_height,
             summary_text,
@@ -418,33 +585,24 @@ def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
     ]
 
     if related:
-        related_width = 300
-        column_gap = 100
+        related_width = layout["related_width"]
+        columns = layout["columns"]
+        column_gap = 80
         row_gap = 70
-        columns = min(3, len(related))
-        total_width = columns * related_width + max(columns - 1, 0) * column_gap
-        start_x = 730 - total_width // 2
-        row_y = related_y
-        row_heights: list[int] = []
-        for row_start in range(0, len(related), columns):
-            row_items = related[row_start : row_start + columns]
-            row_heights.append(
-                max(
-                    estimate_text_height(
-                        related_context_text(item), min_height=95, width=related_width
-                    )
-                    for item in row_items
-                )
-            )
+        grid_width = columns * related_width + (columns - 1) * column_gap
+        start_x = group_center_x - grid_width // 2
+        row_heights = layout["row_heights"]
         for index, item in enumerate(related, start=1):
             node_id = f"related_{index}"
             zero_index = index - 1
             row = zero_index // columns
             column = zero_index % columns
             x = start_x + column * (related_width + column_gap)
-            y = row_y + sum(row_heights[:row]) + row * row_gap
+            y = layout["related_y"] + sum(row_heights[:row]) + row * row_gap
             text = related_context_text(item)
-            node_height = estimate_text_height(text, min_height=95, width=related_width)
+            node_height = estimate_text_height(
+                text, min_height=95, width=related_width
+            )
             nodes.append(
                 build_text_node(node_id, x, y, related_width, node_height, text, "5")
             )
@@ -461,8 +619,6 @@ def build_canvas(payload: dict[str, Any]) -> dict[str, Any]:
                     )
                 )
 
-    content_bottom = max(node["y"] + node["height"] for node in nodes if node["id"] != "g1")
-    nodes[0]["height"] = content_bottom - nodes[0]["y"] + 80
     validate_canvas_layout(nodes)
     return {"nodes": nodes, "edges": edges}
 
@@ -503,6 +659,11 @@ def write_canvas(payload: dict[str, Any]) -> Path:
     base = payload["file_stem"] or payload["title"]
     target = target_dir / f"{sanitize_filename(str(base))}.canvas"
     force = bool(payload["force"])
+    if force and not target.exists():
+        raise FileNotFoundError(
+            f"Target file does not exist: {target}. --force only updates an "
+            "existing file."
+        )
     if target.exists() and not force:
         raise FileExistsError(
             f"Target file already exists: {target}. Refuse to overwrite without "
@@ -553,6 +714,8 @@ def main() -> int:
     except Exception as exc:
         if isinstance(exc, FileExistsError):
             error = "target_exists"
+        elif isinstance(exc, FileNotFoundError):
+            error = "target_missing"
         elif isinstance(exc, PermissionError):
             error = "overwrite_not_authorized"
         else:

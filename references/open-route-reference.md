@@ -35,4 +35,4 @@
 
 ## 下一步
 
-若生成了文件产物，先读 `references/runtime-check.md`；回答结束前一律读 `references/quality-check.md`。如果队列里还有其他 task，由 `references/route-reference.md` 继续推进。
+若生成了文件产物，先读 `references/runtime-check.md`。如果队列里还有其他 task，由 `references/route-reference.md` 继续推进；全部 task 完成后读 `references/text-output-reference.md`，再读 `references/quality-check.md`。

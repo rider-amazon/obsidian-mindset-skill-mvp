@@ -40,8 +40,8 @@ STRING_FIELDS = {
     "overwrite_reason",
     "status",
 }
-STRING_LIST_FIELDS = {"understanding_points", "related", "next_steps"}
-BOOLEAN_FIELDS = {"force", "overwrite_authorized"}
+STRING_LIST_FIELDS = {"understanding_points", "related"}
+BOOLEAN_FIELDS = {"overwrite_authorized"}
 
 
 class JsonArgumentParser(argparse.ArgumentParser):
@@ -50,6 +50,8 @@ class JsonArgumentParser(argparse.ArgumentParser):
 
 
 def validate_spec(spec: dict[str, Any]) -> None:
+    if "force" in spec:
+        raise ValueError("Field 'force' is CLI-only; use --force.")
     for field in STRING_FIELDS:
         if field in spec and spec[field] is not None and not isinstance(spec[field], str):
             raise TypeError(f"Field '{field}' must be a string or null.")
@@ -110,12 +112,6 @@ def parse_args() -> argparse.Namespace:
         help="Question status: unresolved / partial / answered / converted_to_concept.",
     )
     parser.add_argument(
-        "--next-step",
-        action="append",
-        default=[],
-        help="Next action bullet. Repeatable.",
-    )
-    parser.add_argument(
         "--force",
         action="store_true",
         help="Overwrite the target file if it already exists.",
@@ -144,9 +140,6 @@ def merge_args_with_spec(args: argparse.Namespace) -> dict[str, Any]:
         "answer": args.answer if args.answer is not None else spec.get("answer"),
         "related": args.related if args.related else spec.get("related") or [],
         "status": args.status or spec.get("status") or DEFAULT_STATUS,
-        "next_steps": (
-            args.next_step if args.next_step else spec.get("next_steps") or []
-        ),
         "force": args.force,
         "overwrite_authorized": spec.get("overwrite_authorized", False),
         "overwrite_reason": spec.get("overwrite_reason"),
@@ -193,7 +186,6 @@ def build_content(payload: dict[str, Any]) -> str:
     understanding_points = payload["understanding_points"]
     answer = payload["answer"]
     related = payload["related"]
-    next_steps = payload["next_steps"]
     status = str(payload["status"]).strip()
 
     lines: list[str] = [f"# {title}", "", "## 原始问题", "", question, ""]
@@ -220,12 +212,7 @@ def build_content(payload: dict[str, Any]) -> str:
         lines.append("- ")
     lines.append("")
 
-    lines.extend(["## 状态", "", status, "", "## 下一步动作", ""])
-    if next_steps:
-        lines.extend(f"- {item.strip()}" for item in next_steps if item.strip())
-    else:
-        lines.append("- ")
-    lines.append("")
+    lines.extend(["## 状态", "", status, ""])
 
     return "\n".join(lines)
 
@@ -239,6 +226,11 @@ def write_note(payload: dict[str, Any]) -> Path:
     target = target_dir / f"{sanitize_filename(str(file_stem))}.md"
 
     force = bool(payload["force"])
+    if force and not target.exists():
+        raise FileNotFoundError(
+            f"Target file does not exist: {target}. --force only updates an "
+            "existing file."
+        )
     if target.exists() and not force:
         raise FileExistsError(
             f"Target file already exists: {target}. Refuse to overwrite without "
@@ -287,6 +279,8 @@ def main() -> int:
     except Exception as exc:
         if isinstance(exc, FileExistsError):
             error = "target_exists"
+        elif isinstance(exc, FileNotFoundError):
+            error = "target_missing"
         elif isinstance(exc, PermissionError):
             error = "overwrite_not_authorized"
         else:

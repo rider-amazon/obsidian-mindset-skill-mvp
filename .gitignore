@@ -1,3 +1,13 @@
+
+#agent相关文件
+AGENT.*
+
+#obsidian
+.obsidian/*
+
+#canvas结构图
+*.canvas
+
 # wrangler files
 .wrangler
 .dev.vars*

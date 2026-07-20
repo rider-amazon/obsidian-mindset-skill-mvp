@@ -19,8 +19,8 @@ obsidian原生自带功能：
 
 | 能力 | 产物 | 说明 |
 |---|---|---|
-| `question_note` | `30_Questions/*.md` | 把一个学习问题沉淀为问题页 |
-| `compare_canvas` | `10_Maps/*.canvas` | 把两个概念沉淀为 Obsidian Canvas 对比图 |
+| `question_note` | `30_Questions/*.md` | 新建或更新一个标准问题页 |
+| `compare_canvas` | `10_Maps/*.canvas` | 新建或更新一个标准 Obsidian Canvas 对比图 |
 | `open_route` | 可选新建 Markdown / Canvas | 处理标准链路以外的问题，只允许安全新建 |
 
 `question_note` 和 `compare_canvas` 是当前仅有的标准链路。复杂请求会先拆成 `task_queue`，再逐条判断走标准 route 还是 open route。
@@ -75,11 +75,13 @@ obsidian原生自带功能：
 ```text
 用户请求
   -> SKILL.md
-  -> references/prompt-reference.md     生成 Prompt JSON
+  -> 新建/回答：references/prompt-reference.md
+  -> 更新/保留：references/update-prompt-reference.md
   -> references/route-reference.md      生成 Route JSON
   -> 标准链路或 open_route
   -> references/runtime-check.md        有文件产物时检查
-  -> references/quality-check.md        回答结束前检查
+  -> references/text-output-reference.md 组织用户可见文字
+  -> references/quality-check.md        最终回答检查
 ```
 
 中间 JSON 不默认落盘，只作为 agent 阶段间的显式契约。这样做是为了减少“agent 脑子里想过但没有留下可检查结构”的问题。
@@ -90,11 +92,13 @@ obsidian原生自带功能：
 SKILL.md
 references/
   prompt-reference.md
+  update-prompt-reference.md
   route-reference.md
   question-note-reference.md
   compare-canvas-reference.md
   open-route-reference.md
   runtime-check.md
+  text-output-reference.md
   quality-check.md
 scripts/
   create_question_note.py
@@ -105,13 +109,13 @@ scripts/
 
 写入 Obsidian Vault 时必须显式传入 `--vault <vault_root>`，不得把 skill 安装目录当作 Vault。
 
-默认只新建文件，不覆盖已有文件。覆盖必须同时满足三个条件：
+默认只新建文件。只有 `question_note` 和 `compare_canvas` 标准产物支持更新，覆盖必须同时满足三个条件：
 
 1. 用户在当前请求中明确要求覆盖。
-2. spec 中写入 `overwrite_authorized: true` 和非空 `overwrite_reason`。
+2. spec 中写入 `overwrite_authorized: true` 和非空 `overwrite_reason`；spec 不得包含 `force`。
 3. 命令行显式传入 `--force`。
 
-脚本写入采用临时文件后替换，避免直接写入时异常导致已有文件被截断。
+更新时必须先读取旧产物、恢复完整 spec，并保留用户未要求修改的标准字段。脚本先写入同目录临时文件，再替换原路径；不得先删除旧文件。
 
 `open_route` 可以在用户明确要求时新建 Markdown 或 Canvas，但不能删除、移动、修改或覆盖已有文件。Canvas 和 Markdown 中的概念引用优先使用 Obsidian `[[概念]]` 语法。
 
@@ -140,7 +144,7 @@ $env:PYTHONUTF8='1'
 python C:\Users\Lenovo\.codex\skills\.system\skill-creator\scripts\quick_validate.py <skill_dir>
 ```
 
-当前开发目录和 Codex 安装目录均已通过 `quick_validate.py`。核心脚本已验证：必填 Vault、类型校验、结构化错误、覆盖授权、Canvas 布局检查和 UTF-8 中文内容。
+当前开发目录已通过 `quick_validate.py`。核心脚本已验证：必填 Vault、类型校验、结构化错误、覆盖授权、Canvas 布局检查和 UTF-8 中文内容。
 
 ## 状态
 
