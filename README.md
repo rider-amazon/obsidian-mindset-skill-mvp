@@ -1,4 +1,4 @@
-# Obsidian Mindset MVP
+# Obsidian Mindset
 
 一个面向 Obsidian 学习场景的 AI Skill 原型。
 
