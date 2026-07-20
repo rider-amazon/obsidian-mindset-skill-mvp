@@ -6,7 +6,7 @@
 
 ## 何时读取
 
-每个 task 完成前都读取本文件。若当前 task 生成了文件产物，应先完成 `references/runtime-check.md`。
+全部 task 完成并由 `references/text-output-reference.md` 组织用户可见回答后读取本文件。文件产物必须已经通过 `references/runtime-check.md`。
 
 ## 检查项
 
@@ -20,6 +20,8 @@
 | 语言 | 默认中文，专业术语可保留英文 |
 | 队列完整性 | 如果还有后续 task，不得遗忘队列推进 |
 | 产物完整性 | 用户要求的每个独立产物都必须对应一个 task，不能作为附加要求被静默忽略 |
+| 回执准确性 | 生成、更新、保留和失败的措辞必须与 task action、脚本 result 和实际路径一致 |
+| 提醒克制 | 内容提醒只说明密度或长度，不自动扩张新主题或任务 |
 
 ## 失败处理
 
@@ -31,4 +33,4 @@
 
 ## 下一步
 
-质量通过后，如果 `Route JSON` 里还有下一个 task，回到 `references/route-reference.md` 继续；没有下一个 task 则结束运行。
+质量通过后发送最终回答并结束运行；不通过则修正文字输出后重新检查。

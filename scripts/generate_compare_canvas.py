@@ -40,6 +40,8 @@ class JsonArgumentParser(argparse.ArgumentParser):
 
 
 def validate_spec(spec: dict[str, Any]) -> None:
+    if "force" in spec:
+        raise ValueError("Field 'force' is CLI-only; use --force.")
     for field in STRING_FIELDS:
         if field in spec and spec[field] is not None and not isinstance(spec[field], str):
             raise TypeError(f"Field '{field}' must be a string or null.")
@@ -49,8 +51,6 @@ def validate_spec(spec: dict[str, Any]) -> None:
         value = spec[field]
         if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
             raise TypeError(f"Field '{field}' must be an array of strings.")
-    if "force" in spec and not isinstance(spec["force"], bool):
-        raise TypeError("Field 'force' must be a JSON boolean.")
     if "overwrite_authorized" in spec and not isinstance(spec["overwrite_authorized"], bool):
         raise TypeError("Field 'overwrite_authorized' must be a JSON boolean.")
 
@@ -659,6 +659,11 @@ def write_canvas(payload: dict[str, Any]) -> Path:
     base = payload["file_stem"] or payload["title"]
     target = target_dir / f"{sanitize_filename(str(base))}.canvas"
     force = bool(payload["force"])
+    if force and not target.exists():
+        raise FileNotFoundError(
+            f"Target file does not exist: {target}. --force only updates an "
+            "existing file."
+        )
     if target.exists() and not force:
         raise FileExistsError(
             f"Target file already exists: {target}. Refuse to overwrite without "
@@ -709,6 +714,8 @@ def main() -> int:
     except Exception as exc:
         if isinstance(exc, FileExistsError):
             error = "target_exists"
+        elif isinstance(exc, FileNotFoundError):
+            error = "target_missing"
         elif isinstance(exc, PermissionError):
             error = "overwrite_not_authorized"
         else:
