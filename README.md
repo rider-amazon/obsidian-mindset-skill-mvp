@@ -34,7 +34,7 @@ obsidian原生自带功能：
 1. 学习问题稳定沉淀为 `30_Questions/*.md`。
 2. 两个概念对比稳定沉淀为 `10_Maps/*.canvas`。
 
-当前用户可见内容默认中文。英文文件名、脚本名和模式名保留英文，方便 agent 与代码稳定引用。
+当前用户可见内容默认中文。英文文件名、脚本名、能力名和 route 名保留英文，方便 agent 与代码稳定引用。
 
 
 
@@ -77,11 +77,12 @@ obsidian原生自带功能：
   -> SKILL.md
   -> 新建/回答：references/prompt-reference.md
   -> 更新/保留：references/update-prompt-reference.md
-  -> references/route-reference.md      生成 Route JSON
-  -> 标准链路或 open_route
-  -> references/runtime-check.md        有文件产物时检查
-  -> references/text-output-reference.md 组织用户可见文字
-  -> references/quality-check.md        最终回答检查
+  -> references/route-reference.md        为每个 task 选择执行 reference
+  -> 按 task_queue 原顺序执行
+     -> 语言回答：open_route 直接形成回答片段
+     -> 文件产物：references/runtime-check.md
+  -> 有文件回执：references/text-output-reference.md
+  -> references/quality-check.md          检查完整回答
 ```
 
 中间 JSON 不默认落盘，只作为 agent 阶段间的显式契约。这样做是为了减少“agent 脑子里想过但没有留下可检查结构”的问题。
@@ -94,8 +95,14 @@ references/
   prompt-reference.md
   update-prompt-reference.md
   route-reference.md
-  question-note-reference.md
-  compare-canvas-reference.md
+  question-note/
+    reference.md
+    create-reference.md
+    update-reference.md
+  compare-canvas/
+    reference.md
+    create-reference.md
+    update-reference.md
   open-route-reference.md
   runtime-check.md
   text-output-reference.md
@@ -107,7 +114,7 @@ scripts/
 
 ## 安全边界
 
-写入 Obsidian Vault 时必须显式传入 `--vault <vault_root>`，不得把 skill 安装目录当作 Vault。
+Prompt JSON 或 Update Prompt JSON 在 `request.vault_root` 保存本次请求唯一、已确认的 Vault 根目录绝对路径。纯语言请求允许该字段为 `null`；文件请求缺失该字段时必须在 Route 阶段阻断。脚本调用必须显式传入 `--vault <request.vault_root>`，不得把 Skill 安装目录或当前目录猜作 Vault。
 
 默认只新建文件。只有 `question_note` 和 `compare_canvas` 标准产物支持更新，覆盖必须同时满足三个条件：
 
@@ -124,13 +131,13 @@ scripts/
 生成问题页：
 
 ```powershell
-python scripts/create_question_note.py --vault <vault_root> --spec <question_spec.json>
+python scripts/create_question_note.py --vault <request.vault_root> --spec <question_spec.json>
 ```
 
 生成对比 Canvas：
 
 ```powershell
-python scripts/generate_compare_canvas.py --vault <vault_root> --spec <compare_spec.json>
+python scripts/generate_compare_canvas.py --vault <request.vault_root> --spec <compare_spec.json>
 ```
 
 脚本成功和失败都会输出 JSON。调用方必须检查 `ok`，不能只根据文件路径猜测成功。
@@ -148,4 +155,4 @@ python C:\Users\Lenovo\.codex\skills\.system\skill-creator\scripts\quick_validat
 
 ## 状态
 
-当前版本适合作为本地 MVP 测试版使用。后续功能，例如主地图更新、用户偏好积累、更多 Canvas 模板和更细的 open mode 产物契约，尚未纳入当前稳定链路。
+当前版本适合作为本地 MVP 测试版使用。后续功能，例如主地图更新、用户偏好积累、更多 Canvas 模板和更细的 open route 产物契约，尚未纳入当前稳定链路。

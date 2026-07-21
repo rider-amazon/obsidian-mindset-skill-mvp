@@ -26,6 +26,16 @@
 
 必须确认目标真实存在，并位于用户已经确认的 Obsidian Vault 内。存在多个候选、路径不存在或无法可靠定位时，`confidence` 写 `low`、`target_path` 写 `null`，交给 Route 阻断并请求用户确认。
 
+## Vault 定位
+
+`request.vault_root` 保存本次请求中所有文件 task 共用且已经确认的 Obsidian Vault 根目录绝对路径。按以下顺序确定：
+
+1. 使用用户明确给出且真实存在的 Vault 根目录。
+2. 目标是标准 `30_Questions/<文件>.md` 或 `10_Maps/<文件>.canvas` 时，可从唯一 `target_path` 反推出对应目录的父目录，并确认它是本次 Vault。
+3. 前文已经明确确认唯一 Vault 时，可复用该绝对路径。
+
+无法唯一确认时写 `null`。目标必须位于 `vault_root` 内；两者矛盾时将 `confidence` 写 `low`，不得自行改写路径。当前 schema 一次请求只支持一个 Vault；多个目标属于不同 Vault 时不得合并执行。
+
 ## 能力候选
 
 | 目标 | `task_candidate` |
@@ -67,7 +77,8 @@
   "request": {
     "raw_user_request": "",
     "summary": "",
-    "task_shape": "single | multi"
+    "task_shape": "single | multi",
+    "vault_root": "absolute path | null"
   },
   "task_queue": [
     {

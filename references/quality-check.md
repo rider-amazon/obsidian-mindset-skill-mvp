@@ -6,7 +6,7 @@
 
 ## 何时读取
 
-全部 task 完成并由 `references/text-output-reference.md` 组织用户可见回答后读取本文件。文件产物必须已经通过 `references/runtime-check.md`。
+全部 task 完成后读取本文件。文件产物必须已经通过 `references/runtime-check.md`；存在文件回执时必须已经按 `references/text-output-reference.md` 格式化。纯语言回答不读取 Text Output Reference。
 
 ## 检查项
 
@@ -16,9 +16,9 @@
 | 是否过空 | 不能只有空泛概括 |
 | 是否过载 | 不堆无关概念，不扩写无关内容 |
 | 是否越界 | 不声称未实现能力，不伪装未生成产物 |
-| route 一致 | standard task 按标准 reference；open route 不伪装标准产物 |
+| route 一致 | 每个 task 只按其 `route.reference` 执行；open route 不伪装标准产物 |
 | 语言 | 默认中文，专业术语可保留英文 |
-| 队列完整性 | 如果还有后续 task，不得遗忘队列推进 |
+| 队列完整性 | 每个 task 都有结果；最终输出严格保持 `task_queue[].id` 原顺序 |
 | 产物完整性 | 用户要求的每个独立产物都必须对应一个 task，不能作为附加要求被静默忽略 |
 | 回执准确性 | 生成、更新、保留和失败的措辞必须与 task action、脚本 result 和实际路径一致 |
 | 提醒克制 | 内容提醒只说明密度或长度，不自动扩张新主题或任务 |
@@ -33,4 +33,4 @@
 
 ## 下一步
 
-质量通过后发送最终回答并结束运行；不通过则修正文字输出后重新检查。
+质量通过后发送最终回答并结束运行；不通过则修正对应 task 结果或文件回执后重新检查。
