@@ -25,6 +25,16 @@
 
 顶层 `request` 保存整次请求；每个 task 的 `invoke` 只保存属于当前 task 的原话片段与摘要，两者不得互相替代。
 
+## Vault 定位
+
+`request.vault_root` 保存本次请求中所有文件 task 共用且已经确认的 Obsidian Vault 根目录绝对路径。按以下规则填写：
+
+1. 用户明确给出 Vault 根目录时，验证目录真实存在后使用。
+2. 当前工作区或前文已经明确确认唯一 Vault 时，可复用该绝对路径。
+3. 无法唯一确认时写 `null`；不得使用 Skill 安装目录、仓库目录或当前目录猜测代替。
+
+纯语言请求允许 `vault_root = null`。只要队列包含文件新建 task，`vault_root` 就必须是非空绝对路径，否则交给 Route 阻断。当前 schema 一次请求只支持一个 Vault；多个文件 task 指向不同 Vault 时，不得合并执行。
+
 ## 显式入口识别
 
 `request_route` 只记录用户明确指定的 `question_note`、`compare_canvas` 或 `open_route`。没有明确指定时写 `null`。“生成图”“保存”“沉淀”“写入”“生成 Canvas”只是需求信号，不等于指定 route。
@@ -67,6 +77,7 @@
 | `request.raw_user_request` | 用户本轮完整原话 |
 | `request.summary` | 对整次请求的一句话概括 |
 | `request.task_shape` | `single` / `multi` |
+| `request.vault_root` | 本次请求唯一、已确认的 Vault 根目录绝对路径；纯语言请求可为 `null` |
 | `task_queue[].id` | 保持任务顺序的编号 |
 | `task_queue[].invoke.raw_user_request` | 当前 task 对应的原话片段 |
 | `task_queue[].invoke.summary` | 当前 task 的独立目标 |
@@ -84,7 +95,8 @@
   "request": {
     "raw_user_request": "",
     "summary": "",
-    "task_shape": "single | multi"
+    "task_shape": "single | multi",
+    "vault_root": "absolute path | null"
   },
   "task_queue": [
     {

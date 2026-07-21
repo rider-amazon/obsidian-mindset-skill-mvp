@@ -6,7 +6,7 @@
 
 ## 输入
 
-只接收 `route.type = "open"` 的当前 task。
+只接收 `route.reference = "references/open-route-reference.md"` 的当前 task。`operation.action` 只能是 `answer` 或 `create`。
 
 ## 回答原则
 
@@ -16,7 +16,7 @@
 
 默认不落盘，不默认生成 Canvas；除非用户明确要求，否则只输出语言回答。
 
-用户明确要求保存时，open route 只允许新建文件，不允许删除、移动、修改或覆盖已有文件。目标文件已存在时必须停止并说明原因，不得自动改名写入，也不得设置覆盖。
+用户明确要求保存时，open route 只允许新建文件，不允许删除、移动、修改或覆盖已有文件。必须使用 `request.vault_root` 作为唯一 Vault 根目录；该字段为空、目录不存在或目标不在该目录内时停止。目标文件已存在时必须停止并说明原因，不得自动改名写入，也不得设置覆盖。
 
 允许新建的轻量产物：
 
@@ -35,4 +35,4 @@
 
 ## 下一步
 
-若生成了文件产物，先读 `references/runtime-check.md`。如果队列里还有其他 task，由 `references/route-reference.md` 继续推进；全部 task 完成后读 `references/text-output-reference.md`，再读 `references/quality-check.md`。
+`answer` 直接保存当前 task 的语言回答片段，不读取 `references/text-output-reference.md`。`create` 生成文件后先读 `references/runtime-check.md`；如果队列里还有 task，按 Route JSON 原顺序继续。全部 task 完成后，有文件回执时读取 `references/text-output-reference.md`，最后读取 `references/quality-check.md`。

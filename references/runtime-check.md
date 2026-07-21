@@ -13,7 +13,7 @@
 | 检查项 | 要求 |
 |---|---|
 | 脚本 result | `ok` 必须为 `true`，`path` 必须存在 |
-| 路径 | 标准问题页在 `30_Questions/*.md`；标准对比图在 `10_Maps/*.canvas`；open route 新建文件必须位于用户确认的 Vault 内 |
+| 路径 | 产物必须位于 `request.vault_root` 内；标准问题页在 `30_Questions/*.md`，标准对比图在 `10_Maps/*.canvas` |
 | 文件存在 | 必须确认目标文件真实存在 |
 | 内容 | 文件不能空白，不能明显乱码 |
 | 格式 | `.canvas` 必须是合法 JSON |
@@ -33,4 +33,4 @@
 
 ## 下一步
 
-产物有效就继续推进队列；全部 task 完成后读取 `references/text-output-reference.md`。产物无效则不要进入下一个 task。
+产物有效就保存当前 task 结果并按 Route JSON 继续推进。全部 task 完成后，存在文件回执时读取 `references/text-output-reference.md`；产物无效则不要进入下一个 task。
