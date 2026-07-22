@@ -77,7 +77,7 @@ obsidian原生自带功能：
   -> SKILL.md
   -> 新建/回答：references/prompt-reference.md
   -> 更新/保留：references/update-prompt-reference.md
-  -> references/route-reference.md        为每个 task 选择执行 reference
+  -> references/route-reference.md        调用确定性 Python Route，为每个 task 选择执行 reference
   -> 按 task_queue 原顺序执行
      -> 语言回答：open_route 直接形成回答片段
      -> 文件产物：references/runtime-check.md
@@ -85,7 +85,7 @@ obsidian原生自带功能：
   -> references/quality-check.md          检查完整回答
 ```
 
-中间 JSON 不默认落盘，只作为 agent 阶段间的显式契约。这样做是为了减少“agent 脑子里想过但没有留下可检查结构”的问题。
+中间 JSON 不写入 Vault 或长期保留，只作为 agent 阶段间的显式契约。Route 调用允许在系统临时目录短暂保存输入 JSON，并在调用后删除。
 
 ## 文件结构
 
@@ -108,6 +108,7 @@ references/
   text-output-reference.md
   quality-check.md
 scripts/
+  resolve_route.py
   create_question_note.py
   generate_compare_canvas.py
 ```
@@ -115,6 +116,14 @@ scripts/
 ## 安全边界
 
 Prompt JSON 或 Update Prompt JSON 在 `request.vault_root` 保存本次请求唯一、已确认的 Vault 根目录绝对路径。纯语言请求允许该字段为 `null`；文件请求缺失该字段时必须在 Route 阶段阻断。脚本调用必须显式传入 `--vault <request.vault_root>`，不得把 Skill 安装目录或当前目录猜作 Vault。
+
+Route 阶段把完整 Prompt JSON 临时写入系统临时目录，并调用：
+
+```text
+python scripts/resolve_route.py --input <temp_prompt_json>
+```
+
+脚本只读临时输入并在 stdout 返回精简路由结果；Agent 再按 task `id` 把 `reference` 与 `reason` 合并回原队列。Route 会解析 Vault 与已有目标的真实绝对路径，阻断 Vault 外的更新或保留目标；它先处理完整队列，任一 task 被阻断时不执行任何文件写入。临时输入不属于 Vault 产物，调用后删除。
 
 默认只新建文件。只有 `question_note` 和 `compare_canvas` 标准产物支持更新，覆盖必须同时满足三个条件：
 
@@ -152,6 +161,12 @@ python C:\Users\Lenovo\.codex\skills\.system\skill-creator\scripts\quick_validat
 ```
 
 当前开发目录已通过 `quick_validate.py`。核心脚本已验证：必填 Vault、类型校验、结构化错误、覆盖授权、Canvas 布局检查和 UTF-8 中文内容。
+
+Route 规则测试：
+
+```powershell
+python -m unittest discover -s tests -v
+```
 
 ## 状态
 
